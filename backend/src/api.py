@@ -46,11 +46,9 @@ db_drop_and_create_all()
 def get_drinks():
     drinks = Drink.query.all()
     form_drinks = [drink.short() for drink in drinks]
-    count_drinks = len(form_drinks)
     return jsonify({
         'success': True,
-        'drinks': form_drinks,
-        'num_drinks': count_drinks
+        'drinks': form_drinks
     })
 
 
@@ -64,17 +62,14 @@ def get_drinks():
 '''
 
 
-@app.route('/drinks-detail/<int:drink_id>', methods=['GET'])
+@app.route('/drinks-detail', methods=['GET'])
 def get_drinks_detail(drink_id):
-    drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
-    if drink is None:
-        abort(404)
-    else:
-        form_drink = drink.long()
-        return jsonify({
-            'success': True,
-            'drink': form_drink
-        })
+    drinks = Drink.query.all()
+    form_drinks = [drink.long() for drink in drinks]
+    return jsonify({
+        'success': True,
+        'drinks': form_drinks
+    })
 
 
 '''
@@ -91,12 +86,17 @@ def get_drinks_detail(drink_id):
 @app.route('/drinks', methods=['POST'])
 def post_drinks():
     body = request.get_json()
-    drink = Drink(title=body.get('title'), recipe=body.get('recipe'))
-    drink.refresh()
-    return jsonify({
-        'success': True,
-        'created': drink.id
-    })
+    if body is None:
+        abort(400)
+    else:
+        drink = Drink(title=body.get('title'), recipe=body.get('recipe'))
+        drink.refresh()
+        form_drink = drink.long()
+        drink.dispose()
+        return jsonify({
+            'success': True,
+            'drinks': form_drink
+        })
 
 
 '''
@@ -114,7 +114,23 @@ def post_drinks():
 
 @app.route('/drinks/<int:drink_id>', methods=['PATCH'])
 def patch_drink(drink_id):
-    return 'patched drink'
+    body = request.get_json()
+    if body is None:
+        abort(400)
+    else:
+        drink = Drink.query.filter(Drink.id==drink_id).one_or_none()
+        if drink is None:
+            abort(422)
+        else:
+            drink.title = body.get('title')
+            drink.recipe = body.get('recipe')
+            drink.update()
+            form_drink = drink.long()
+            drink.dispose()
+            return jsonify({
+                'success':True,
+                'drinks':form_drink
+            })
 
 
 '''
@@ -131,7 +147,16 @@ def patch_drink(drink_id):
 
 @app.route('/drinks/<int:drink_id>', methods=['DELETE'])
 def delete_drink(drink_id):
-    return 'deleted drink'
+    drink = Drink.query.filter(Drink.id==drink_id).one_or_none()
+    if drink is None:
+        abort(422)
+    else:
+        drink.delete()
+        drink.dispose()
+        return jsonify({
+            'success':True,
+            'delete':id
+        })
 
 
 # Error Handling
@@ -164,6 +189,22 @@ def unprocessable(error):
 @TODO implement error handler for 404
     error handler should conform to general task above
 '''
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        'success':False,
+        'error':404,
+        'message':'not found'
+    }), 404
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({
+        'success':False,
+        'error':400,
+        'message':'bad request'
+    }), 400
+
 
 
 '''
