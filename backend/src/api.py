@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, abort
 from sqlalchemy import exc
 import json
 from flask_cors import CORS
+from functools import wraps
 
 from .database.models import db_drop_and_create_all, setup_db, Drink
 from .auth.auth import AuthError, requires_auth
@@ -12,8 +13,6 @@ setup_db(app)
 CORS(app)
 
 # CORS Headers
-
-
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Headers',
@@ -21,7 +20,6 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods',
                          'GET,PATCH,POST,DELETE,OPTIONS')
     return response
-
 
 '''
 @TODO uncomment the following line to initialize the datbase
@@ -211,3 +209,10 @@ def bad_request(error):
 @TODO implement error handler for AuthError
     error handler should conform to general task above
 '''
+@app.errorhandler(AuthError)
+def auth_error(error):
+    return jsonify({
+        'success':False,
+        'error': error.status_code,
+        'message': error.message
+    }), 401

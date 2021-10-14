@@ -1,13 +1,16 @@
 import json
+import os
 from flask import request, _request_ctx_stack
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
 
 
-AUTH0_DOMAIN = 'udacity-fsnd.auth0.com'
+#AUTH0_DOMAIN = 'udacity-fsnd.auth0.com'
+AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN')
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'dev'
+#API_AUDIENCE = 'dev'
+API_AUDIENCE = os.getenv('API_AUDIENCE')
 
 ## AuthError Exception
 '''
@@ -18,10 +21,14 @@ class AuthError(Exception):
     def __init__(self, error, status_code):
         self.error = error
         self.status_code = status_code
+    def format(self):
+        return {
+            'message':self.error,
+            'code':self.status_code
+        }
 
 
 ## Auth Header
-
 '''
 @TODO implement get_token_auth_header() method
     it should attempt to get the header from the request
@@ -31,7 +38,18 @@ class AuthError(Exception):
     return the token part of the header
 '''
 def get_token_auth_header():
-   raise Exception('Not Implemented')
+    auth = request.headers.get('Authorization', None)
+    if not auth:
+        raise AuthError('Authorization header is expected.',401)
+    parts = auth.split()
+    if parts[0].lower() != 'bearer':
+        raise AuthError('Authorization header must start with "Bearer".',401)
+    elif len(parts) == 1:
+        raise AuthError('Token not found.',401)
+    elif len(parts) > 2:
+        raise AuthError('Authorization header must be bearer token.',401)
+    token = parts[1]
+    return token
 
 '''
 @TODO implement check_permissions(permission, payload) method
