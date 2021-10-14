@@ -83,7 +83,15 @@ class Drink(db.Model):
             'title': self.title,
             'recipe': json.loads(self.recipe)
         }
+    
+    def refresh(self):
+        db.session.refresh(self)
 
+    def rollback(self):
+        db.session.rollback()
+
+    def dispose(self):
+        db.session.close()
     '''
     insert()
         inserts a new model into a database

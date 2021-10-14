@@ -11,13 +11,25 @@ app = Flask(__name__)
 setup_db(app)
 CORS(app)
 
+# CORS Headers
+
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers',
+                         'Content-Type,Authorization,true')
+    response.headers.add('Access-Control-Allow-Methods',
+                         'GET,PATCH,POST,DELETE,OPTIONS')
+    return response
+
+
 '''
 @TODO uncomment the following line to initialize the datbase
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-# db_drop_and_create_all()
+db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -30,6 +42,18 @@ CORS(app)
 '''
 
 
+@app.route('/drinks', methods=['GET'])
+def get_drinks():
+    drinks = Drink.query.all()
+    form_drinks = [drink.short() for drink in drinks]
+    count_drinks = len(form_drinks)
+    return jsonify({
+        'success': True,
+        'drinks': form_drinks,
+        'num_drinks': count_drinks
+    })
+
+
 '''
 @TODO implement endpoint
     GET /drinks-detail
@@ -38,6 +62,19 @@ CORS(app)
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+
+
+@app.route('/drinks-detail/<int:drink_id>', methods=['GET'])
+def get_drinks_detail(drink_id):
+    drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
+    if drink is None:
+        abort(404)
+    else:
+        form_drink = drink.long()
+        return jsonify({
+            'success': True,
+            'drink': form_drink
+        })
 
 
 '''
@@ -49,6 +86,17 @@ CORS(app)
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
         or appropriate status code indicating reason for failure
 '''
+
+
+@app.route('/drinks', methods=['POST'])
+def post_drinks():
+    body = request.get_json()
+    drink = Drink(title=body.get('title'), recipe=body.get('recipe'))
+    drink.refresh()
+    return jsonify({
+        'success': True,
+        'created': drink.id
+    })
 
 
 '''
@@ -64,6 +112,11 @@ CORS(app)
 '''
 
 
+@app.route('/drinks/<int:drink_id>', methods=['PATCH'])
+def patch_drink(drink_id):
+    return 'patched drink'
+
+
 '''
 @TODO implement endpoint
     DELETE /drinks/<id>
@@ -74,6 +127,11 @@ CORS(app)
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+
+
+@app.route('/drinks/<int:drink_id>', methods=['DELETE'])
+def delete_drink(drink_id):
+    return 'deleted drink'
 
 
 # Error Handling
