@@ -61,7 +61,7 @@ def get_drinks():
 
 
 @app.route('/drinks-detail', methods=['GET'])
-def get_drinks_detail(drink_id):
+def get_drinks_detail():
     drinks = Drink.query.all()
     form_drinks = [drink.long() for drink in drinks]
     return jsonify({
@@ -87,7 +87,8 @@ def post_drinks():
     if body is None:
         abort(400)
     else:
-        drink = Drink(title=body.get('title'), recipe=body.get('recipe'))
+        drink = Drink(title=body.get('title'), recipe=json.dumps(body.get('recipe')))
+        drink.insert()
         drink.refresh()
         form_drink = drink.long()
         drink.dispose()
@@ -202,6 +203,14 @@ def bad_request(error):
         'error':400,
         'message':'bad request'
     }), 400
+
+@app.errorhandler(500)
+def server_error(error):
+    return jsonify({
+        'success':False,
+        'error':500,
+        'message':'internal server error'
+    }), 500
 
 
 
