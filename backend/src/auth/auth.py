@@ -74,7 +74,7 @@ def get_token_auth_header():
 
 def check_permissions(permission, payload):
     if 'permissions' not in payload:
-        raise AuthError('Permissions not included in JWT.', 400)
+        raise AuthError('Permissions not included in JWT.', 403)
     if permission not in payload['permissions']:
         raise AuthError('Permission not found.', 403)
     return True
@@ -96,7 +96,9 @@ def check_permissions(permission, payload):
 
 
 def verify_decode_jwt(token):
+    print(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
     jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
+    
     jwks = json.loads(jsonurl.read())
     unverified_header = jwt.get_unverified_header(token)
     rsa_key = {}
@@ -130,7 +132,7 @@ def verify_decode_jwt(token):
             except Exception:
                 raise AuthError('Unable to parse authentication token.', 400)
         else:
-            raise AuthError('Unable to find the appropriate key.', 400)
+            raise AuthError('Unable to find the appropriate key.', 403)
 
 
 '''
@@ -153,7 +155,7 @@ def requires_auth(permission=''):
             token = get_token_auth_header()
             payload = verify_decode_jwt(token)
             check_permissions(permission, payload)
-            return f(payload, *args, **kwargs)
+            return f(*args, **kwargs)
 
         return wrapper
     return requires_auth_decorator

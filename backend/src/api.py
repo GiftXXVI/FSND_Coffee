@@ -30,7 +30,7 @@ def after_request(response):
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-# db_drop_and_create_all()
+db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -44,7 +44,6 @@ def after_request(response):
 
 
 @app.route('/drinks', methods=['GET'])
-@requires_auth(permission='get:drinks')
 def get_drinks():
     drinks = Drink.query.all()
     form_drinks = [drink.short() for drink in drinks]
@@ -130,12 +129,12 @@ def patch_drink(drink_id):
     else:
         drink = Drink.query.filter(Drink.id == drink_id).one_or_none()
         if drink is None:
-            abort(422)
+            abort(404)
         else:
             drink.title = body.get('title')
             drink.recipe = json.dumps(body.get('recipe'))
             drink.update()
-            form_drink = drink.long()
+            form_drink = [drink.long()]
             drink.dispose()
             return jsonify({
                 'success': True,
@@ -243,4 +242,4 @@ def auth_error(error):
         'success': False,
         'error': error_data['code'],
         'message': error_data['message']
-    }), 401
+    }), error_data['code']
