@@ -1,8 +1,9 @@
 venv/
+env/
 .vscode/
 __pycache__/
 test.db
-node_modules
+node_modules/
 
 # OS generated files #
 ######################
